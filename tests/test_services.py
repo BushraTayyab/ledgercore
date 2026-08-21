@@ -91,3 +91,42 @@ def test_withdraw_rolls_back_if_transaction_creation_fails(
             ).scalar_one()
         
         assert wallet.balance == Decimal("500.00")
+
+def test_deposit_success(monkeypatch, test_session_factory):
+    monkeypatch.setattr(services, "get_session", test_session_factory)
+
+    result = services.deposit("TESTW001", Decimal("100"))
+
+    assert result["wallet_id"] == "TESTW001"
+    assert result["new_balance"] == Decimal("600.00")
+    assert result["transaction_id"]
+    
+def test_deposit_invalid_amount():
+    with pytest.raises(
+        ValueError,
+        match="Amount must be greater than zero",
+    ):
+        services.deposit("TESTW001", Decimal("0"))
+        
+def test_deposit_wallet_not_found(monkeypatch, test_session_factory):
+    monkeypatch.setattr(services, "get_session", test_session_factory)
+
+    with pytest.raises(ValueError, match="Wallet does not exist"):
+        services.deposit("DOESNOTEXIST", Decimal("100"))
+        
+def test_deposit_creates_transaction(monkeypatch, test_session_factory):
+    monkeypatch.setattr(services, "get_session", test_session_factory)
+
+    result = services.deposit("TESTW001", Decimal("100"))
+
+    with test_session_factory() as session:
+        transaction = session.execute(
+            select(Transaction)
+            .where(
+                Transaction.transaction_id == result["transaction_id"]
+            )
+        ).scalar_one()
+
+    assert transaction.wallet_id == "TESTW001"
+    assert transaction.type == "deposit"
+    assert transaction.amount == Decimal("100")
