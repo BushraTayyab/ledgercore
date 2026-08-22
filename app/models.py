@@ -10,7 +10,13 @@ from sqlalchemy import (
     String,
     text,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 
 class Base(DeclarativeBase):
@@ -35,6 +41,9 @@ class User(Base):
         server_default=text("CURRENT_DATE"),
     )
 
+    wallets: Mapped[list["Wallet"]] = relationship(
+        back_populates="user"
+    )
 
 class Wallet(Base):
     __tablename__ = "wallets"
@@ -74,6 +83,14 @@ class Wallet(Base):
     date_created: Mapped[date | None] = mapped_column(
         Date,
         server_default=text("CURRENT_DATE"),
+    )
+    
+    user: Mapped["User"] = relationship(
+    back_populates="wallets"
+    )
+    
+    transactions: Mapped[list["Transaction"]] = relationship(
+    back_populates="wallet"
     )
 
 
@@ -115,4 +132,8 @@ class Transaction(Base):
     time_stamp: Mapped[datetime | None] = mapped_column(
         DateTime,
         server_default=text("CURRENT_TIMESTAMP"),
+    )
+    
+    wallet: Mapped["Wallet"] = relationship(
+    back_populates="transactions"
     )

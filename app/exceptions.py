@@ -8,3 +8,6 @@ class InvalidAmountError(Exception):
 
 class InsufficientBalanceError(Exception):
     pass
+
+class UserNotFoundError(Exception):
+    pass

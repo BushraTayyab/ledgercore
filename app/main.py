@@ -1,12 +1,17 @@
 from fastapi import FastAPI, HTTPException
-from app.schemas import TransactionCreateRequest, TransactionType
+from app.schemas import (
+    TransactionCreateRequest, 
+    TransactionType, 
+    UserCreateRequest,
+)
 from app.exceptions import (
     InsufficientBalanceError,
     InvalidAmountError,
     WalletNotFoundError,
+    UserNotFoundError,
 )
 
-from app.services import deposit, withdraw
+from app.services import deposit, withdraw, create_user, create_wallet
 
 app = FastAPI(title="LedgerCore")
 
@@ -31,5 +36,21 @@ def create_transaction(
     except (InvalidAmountError, InsufficientBalanceError) as error:
         raise HTTPException(
             status_code=400,
+            detail=str(error),
+        )
+
+@app.post("/users")
+def create_user_endpoint(request: UserCreateRequest):
+    return create_user(request.user_name)
+    
+    
+@app.post("/users/{user_id}/wallets")
+def create_wallet_endpoint(user_id: str):
+    try:
+        return create_wallet(user_id)
+    
+    except UserNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
             detail=str(error),
         )
