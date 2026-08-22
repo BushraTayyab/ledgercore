@@ -8,6 +8,12 @@ from app.models import Transaction
 from app.models import Wallet
 from sqlalchemy.exc import IntegrityError
 
+from app.exceptions import (
+    WalletNotFoundError,
+    InvalidAmountError,
+    InsufficientBalanceError,
+)
+
 
 def test_withdraw_success(monkeypatch, test_session_factory):
     monkeypatch.setattr(services, "get_session", test_session_factory)
@@ -21,7 +27,7 @@ def test_withdraw_success(monkeypatch, test_session_factory):
 
 def test_withdraw_invalid_amount():
     with pytest.raises(
-        ValueError,
+        InvalidAmountError,
         match="Amount must be greater than zero",
     ):
         services.withdraw("TESTW001", Decimal("0"))
@@ -30,8 +36,8 @@ def test_withdraw_wallet_not_found(monkeypatch, test_session_factory):
     monkeypatch.setattr(services, "get_session", test_session_factory)
     
     with pytest.raises(
-        ValueError, 
-        match="Wallet does not exist"
+        WalletNotFoundError,
+        match="Wallet does not exist",
     ):
         services.withdraw("DOESNOTEXIT", Decimal("100"))
 
@@ -39,8 +45,8 @@ def test_withdraw_insufficient_balance(monkeypatch, test_session_factory):
     monkeypatch.setattr(services, "get_session", test_session_factory)
     
     with pytest.raises(
-        ValueError,
-        match="Insufficient balance"
+        InsufficientBalanceError,
+        match="Insufficient balance",
     ):
         services.withdraw("TESTW001", Decimal("600"))
 
@@ -103,7 +109,7 @@ def test_deposit_success(monkeypatch, test_session_factory):
     
 def test_deposit_invalid_amount():
     with pytest.raises(
-        ValueError,
+        InvalidAmountError,
         match="Amount must be greater than zero",
     ):
         services.deposit("TESTW001", Decimal("0"))
@@ -111,7 +117,10 @@ def test_deposit_invalid_amount():
 def test_deposit_wallet_not_found(monkeypatch, test_session_factory):
     monkeypatch.setattr(services, "get_session", test_session_factory)
 
-    with pytest.raises(ValueError, match="Wallet does not exist"):
+    with pytest.raises(
+        WalletNotFoundError,
+        match="Wallet does not exist",
+    ):
         services.deposit("DOESNOTEXIST", Decimal("100"))
         
 def test_deposit_creates_transaction(monkeypatch, test_session_factory):

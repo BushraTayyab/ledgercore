@@ -6,12 +6,18 @@ from app.models import Wallet, Transaction
 
 from uuid import uuid4
 
+from app.exceptions import (
+    WalletNotFoundError,
+    InvalidAmountError,
+    InsufficientBalanceError,
+)
+
 def generate_transaction_id() -> str:
     return uuid4().hex[:10].upper()
 
 def withdraw(wallet_id: str, amount: Decimal):
     if amount <= 0:
-        raise ValueError("Amount must be greater than zero")
+        raise InvalidAmountError("Amount must be greater than zero")
 
     with get_session() as session:
         try:
@@ -24,10 +30,10 @@ def withdraw(wallet_id: str, amount: Decimal):
             wallet = session.execute(stmt).scalar_one_or_none()
 
             if wallet is None:
-                raise ValueError("Wallet does not exist")
+                raise WalletNotFoundError("Wallet does not exist")
 
             if wallet.balance < amount:
-                raise ValueError("Insufficient balance")
+                raise InsufficientBalanceError("Insufficient balance")
 
             wallet.balance -= amount
 
@@ -53,7 +59,7 @@ def withdraw(wallet_id: str, amount: Decimal):
 
 def deposit(wallet_id: str, amount: Decimal):
     if amount <= 0:
-        raise ValueError("Amount must be greater than zero")
+        raise InvalidAmountError("Amount must be greater than zero")
 
     with get_session() as session:
         try:
@@ -66,7 +72,7 @@ def deposit(wallet_id: str, amount: Decimal):
             wallet = session.execute(stmt).scalar_one_or_none()
 
             if wallet is None:
-                raise ValueError("Wallet does not exist")
+                raise WalletNotFoundError("Wallet does not exist")
 
             wallet.balance += amount
 
