@@ -13,3 +13,6 @@ class TransactionRequest(BaseModel):
 class TransactionCreateRequest(BaseModel):
     type: TransactionType
     amount: Decimal = Field(gt=0)
+    
+class UserCreateRequest(BaseModel):
+    user_name: str = Field(min_length=1, max_length=100)

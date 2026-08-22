@@ -2,18 +2,16 @@ from decimal import Decimal
 from sqlalchemy import select
 
 from app.database import get_session
-from app.models import Wallet, Transaction
+from app.models import Wallet, Transaction, User
 
-from uuid import uuid4
+from app.utils import generate_transaction_id, generate_user_id, generate_wallet_id
 
 from app.exceptions import (
     WalletNotFoundError,
     InvalidAmountError,
     InsufficientBalanceError,
+    UserNotFoundError,
 )
-
-def generate_transaction_id() -> str:
-    return uuid4().hex[:10].upper()
 
 def withdraw(wallet_id: str, amount: Decimal):
     if amount <= 0:
@@ -95,3 +93,46 @@ def deposit(wallet_id: str, amount: Decimal):
         except:
             session.rollback()
             raise
+        
+def create_user(user_name: str):
+
+    with get_session() as session:
+        user = User(
+            user_id=generate_user_id(),
+            user_name=user_name,
+        )
+        
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        
+
+        return {
+            "user_id": user.user_id,
+            "user_name": user.user_name,
+            "date_joined" : user.date_joined,
+        }
+
+def create_wallet(user_id: str):
+    with get_session() as session:
+        user = session.get(User, user_id)
+
+        if user is None:
+            raise UserNotFoundError("User does not exist")
+        
+        wallet = Wallet(
+            wallet_id=generate_wallet_id(),
+            user_id=user_id,
+        )
+        
+        session.add(wallet)
+        session.commit()
+        session.refresh(wallet)
+        
+        return {
+            "wallet_id": wallet.wallet_id,
+            "user_id": wallet.user_id,
+            "balance": wallet.balance,
+            "status": wallet.status,
+            "date_created": wallet.date_created,
+        }        

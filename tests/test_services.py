@@ -12,6 +12,7 @@ from app.exceptions import (
     WalletNotFoundError,
     InvalidAmountError,
     InsufficientBalanceError,
+    UserNotFoundError,
 )
 
 
@@ -139,3 +140,50 @@ def test_deposit_creates_transaction(monkeypatch, test_session_factory):
     assert transaction.wallet_id == "TESTW001"
     assert transaction.type == "deposit"
     assert transaction.amount == Decimal("100")
+    
+def test_create_user(monkeypatch, test_session_factory):
+    monkeypatch.setattr(services, "get_session", test_session_factory)
+    monkeypatch.setattr(
+        services,
+        "generate_user_id",
+        lambda: "TESTUSER01",
+    )
+
+    result = services.create_user("Alice")
+
+    assert result["user_id"] == "TESTUSER01"
+    assert result["user_name"] == "Alice"
+    assert result["date_joined"] is not None
+    
+def test_create_wallet_user_not_found(
+    monkeypatch,
+    test_session_factory,
+):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    with pytest.raises(UserNotFoundError):
+        services.create_wallet("DOESNOTEXIST")
+        
+def test_create_wallet(monkeypatch, test_session_factory):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+    monkeypatch.setattr(
+        services,
+        "generate_wallet_id",
+        lambda: "TESTW002",
+    )
+
+    result = services.create_wallet("TEST001")
+
+    assert result["wallet_id"] == "TESTW002"
+    assert result["user_id"] == "TEST001"
+    assert result["balance"] == Decimal("0.00")
+    assert result["status"] == "active"
+    assert result["date_created"] is not None
