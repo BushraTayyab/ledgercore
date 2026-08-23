@@ -41,7 +41,7 @@ def create_transaction(
 
 @app.post("/users")
 def create_user_endpoint(request: UserCreateRequest):
-    return create_user(request.user_name)
+    return create_user(request.user_name, request.password)
     
     
 @app.post("/users/{user_id}/wallets")

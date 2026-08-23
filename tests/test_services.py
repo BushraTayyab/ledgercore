@@ -150,7 +150,7 @@ def test_create_user(monkeypatch, test_session_factory):
         lambda: "TESTUSER01",
     )
 
-    result = services.create_user("Alice")
+    result = services.create_user("Alice","AlicePassword123")
 
     assert result["user_id"] == "TESTUSER01"
     assert result["user_name"] == "Alice"

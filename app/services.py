@@ -4,7 +4,13 @@ from sqlalchemy import select
 from app.database import get_session
 from app.models import Wallet, Transaction, User
 
-from app.utils import generate_transaction_id, generate_user_id, generate_wallet_id
+from app.utils import ( 
+    generate_transaction_id, 
+    generate_user_id, 
+    generate_wallet_id, 
+    password_hasher,
+)
+
 
 from app.exceptions import (
     WalletNotFoundError,
@@ -95,12 +101,13 @@ def deposit(wallet_id: str, amount: Decimal):
             session.rollback()
             raise
         
-def create_user(user_name: str):
+def create_user(user_name: str, password: str):
 
     with get_session() as session:
         user = User(
             user_id=generate_user_id(),
             user_name=user_name,
+            password_hash=password_hasher.hash(password),
         )
         
         session.add(user)

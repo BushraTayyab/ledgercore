@@ -6,3 +6,4 @@ python-dotenv
 pytest
 httpx2
 alembic
+pwdlib[argon2]

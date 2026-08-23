@@ -1,4 +1,5 @@
 from uuid import uuid4
+from pwdlib import PasswordHash
 
 
 def generate_user_id() -> str:
@@ -10,3 +11,5 @@ def generate_transaction_id() -> str:
 
 def generate_wallet_id() -> str:
     return uuid4().hex[:10].upper()
+
+password_hasher = PasswordHash.recommended()

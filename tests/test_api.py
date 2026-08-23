@@ -111,6 +111,8 @@ def test_create_user(monkeypatch, test_session_factory):
         "/users",
         json={
             "user_name": "Alice",
+            "password": "AlicePassword123",
+            
         },
     )
 
