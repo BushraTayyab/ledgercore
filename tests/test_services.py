@@ -13,6 +13,7 @@ from app.exceptions import (
     InvalidAmountError,
     InsufficientBalanceError,
     UserNotFoundError,
+    UnauthorizedWalletAccessError,
 )
 
 
@@ -187,3 +188,47 @@ def test_create_wallet(monkeypatch, test_session_factory):
     assert result["balance"] == Decimal("0.00")
     assert result["status"] == "active"
     assert result["date_created"] is not None
+
+def test_verify_wallet_ownership(monkeypatch, test_session_factory):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    services.verify_wallet_ownership(
+        "TEST001",
+        "TESTW001",
+    )
+
+def test_verify_wallet_ownership_wrong_user(
+    monkeypatch,
+    test_session_factory,
+):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    with pytest.raises(UnauthorizedWalletAccessError):
+        services.verify_wallet_ownership(
+            "SOMEOTHERUSER",
+            "TESTW001",
+        )
+
+def test_verify_wallet_ownership_wallet_not_found(
+    monkeypatch,
+    test_session_factory,
+):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    with pytest.raises(WalletNotFoundError):
+        services.verify_wallet_ownership(
+            "TEST001",
+            "DOESNOTEXIST",
+        )

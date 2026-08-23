@@ -35,6 +35,11 @@ class User(Base):
         String(100),
         nullable=False,
     )
+    
+    password_hash: Mapped[str | None] = mapped_column(
+    String(255),
+    nullable=True,
+    )
 
     date_joined: Mapped[date | None] = mapped_column(
         Date,
@@ -44,6 +49,8 @@ class User(Base):
     wallets: Mapped[list["Wallet"]] = relationship(
         back_populates="user"
     )
+    
+    
 
 class Wallet(Base):
     __tablename__ = "wallets"

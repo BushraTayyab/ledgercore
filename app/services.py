@@ -11,6 +11,7 @@ from app.exceptions import (
     InvalidAmountError,
     InsufficientBalanceError,
     UserNotFoundError,
+    UnauthorizedWalletAccessError,
 )
 
 def withdraw(wallet_id: str, amount: Decimal):
@@ -136,3 +137,15 @@ def create_wallet(user_id: str):
             "status": wallet.status,
             "date_created": wallet.date_created,
         }        
+        
+def verify_wallet_ownership(user_id: str, wallet_id: str):
+    with get_session() as session:
+        wallet = session.get(Wallet, wallet_id)
+
+        if wallet is None:
+            raise WalletNotFoundError("Wallet does not exist")
+
+        if wallet.user_id != user_id:
+            raise UnauthorizedWalletAccessError(
+                "User does not own wallet"
+            )

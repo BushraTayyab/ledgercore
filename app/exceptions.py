@@ -11,3 +11,6 @@ class InsufficientBalanceError(Exception):
 
 class UserNotFoundError(Exception):
     pass
+
+class UnauthorizedWalletAccessError(Exception):
+    pass
