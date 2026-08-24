@@ -14,3 +14,6 @@ class UserNotFoundError(Exception):
 
 class UnauthorizedWalletAccessError(Exception):
     pass
+
+class UnauthorizedUserAccessError(Exception):
+    pass

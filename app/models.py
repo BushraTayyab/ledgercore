@@ -40,6 +40,12 @@ class User(Base):
     String(255),
     nullable=True,
     )
+    
+    email: Mapped[str] = mapped_column(
+    String(255),
+    nullable=False,
+    unique=True,
+    )
 
     date_joined: Mapped[date | None] = mapped_column(
         Date,

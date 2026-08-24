@@ -18,6 +18,7 @@ from app.exceptions import (
     InsufficientBalanceError,
     UserNotFoundError,
     UnauthorizedWalletAccessError,
+    UnauthorizedUserAccessError,
 )
 
 def withdraw(wallet_id: str, amount: Decimal):
@@ -101,12 +102,13 @@ def deposit(wallet_id: str, amount: Decimal):
             session.rollback()
             raise
         
-def create_user(user_name: str, password: str):
+def create_user(user_name: str, email: str, password: str):
 
     with get_session() as session:
         user = User(
             user_id=generate_user_id(),
             user_name=user_name,
+            email=email,
             password_hash=password_hasher.hash(password),
         )
         
@@ -118,7 +120,8 @@ def create_user(user_name: str, password: str):
         return {
             "user_id": user.user_id,
             "user_name": user.user_name,
-            "date_joined" : user.date_joined,
+            "email": user.email,
+            "date_joined": user.date_joined,
         }
 
 def create_wallet(user_id: str):
@@ -156,3 +159,36 @@ def verify_wallet_ownership(user_id: str, wallet_id: str):
             raise UnauthorizedWalletAccessError(
                 "User does not own wallet"
             )
+            
+# Open a session.
+# Find the User by email.
+# If the user doesn't exist, reject authentication.
+# Verify the supplied password against user.password_hash using:
+# password_hasher.verify(password, user.password_hash)
+# If verification fails, reject authentication.
+# If it succeeds, return the authenticated user's information.
+
+def authenticate_user(email: str, password: str):
+    with get_session() as session:
+        stmt = select(User).where(User.email == email)
+        user = session.execute(stmt).scalar_one_or_none()
+
+        if user is None:
+            raise UserNotFoundError("User does not exist")
+
+        if user.password_hash is None:
+            raise UnauthorizedUserAccessError(
+                "User does not have a password set"
+            )
+
+        if not password_hasher.verify(password, user.password_hash):
+            raise UnauthorizedUserAccessError(
+                "Invalid email or password"
+            )
+
+        return {
+            "user_id": user.user_id,
+            "user_name": user.user_name,
+            "email": user.email,
+            "date_joined": user.date_joined,
+        }

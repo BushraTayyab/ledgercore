@@ -16,4 +16,9 @@ class TransactionCreateRequest(BaseModel):
     
 class UserCreateRequest(BaseModel):
     user_name: str = Field(min_length=1, max_length=100)
+    email: str
+    password: str = Field(min_length=8, max_length=100)
+    
+class UserLoginRequest(BaseModel):
+    email: str
     password: str = Field(min_length=8, max_length=100)

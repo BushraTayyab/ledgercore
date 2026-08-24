@@ -111,8 +111,8 @@ def test_create_user(monkeypatch, test_session_factory):
         "/users",
         json={
             "user_name": "Alice",
+            "email": "alice@example.com",
             "password": "AlicePassword123",
-            
         },
     )
 
@@ -122,6 +122,7 @@ def test_create_user(monkeypatch, test_session_factory):
 
     assert data["user_id"] == "TESTUSER01"
     assert data["user_name"] == "Alice"
+    assert data["email"] == "alice@example.com"
     assert data["date_joined"] == str(date.today())
 
 def test_create_wallet(monkeypatch, test_session_factory):

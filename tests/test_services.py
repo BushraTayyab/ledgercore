@@ -4,9 +4,9 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
-from app.models import Transaction
-from app.models import Wallet
+from app.models import Transaction, User, Wallet
 from sqlalchemy.exc import IntegrityError
+from app.utils import password_hasher
 
 from app.exceptions import (
     WalletNotFoundError,
@@ -150,10 +150,15 @@ def test_create_user(monkeypatch, test_session_factory):
         lambda: "TESTUSER01",
     )
 
-    result = services.create_user("Alice","AlicePassword123")
+    result = services.create_user(
+        "Alice",
+        "alice@example.com",
+        "AlicePassword123",
+    )
 
     assert result["user_id"] == "TESTUSER01"
     assert result["user_name"] == "Alice"
+    assert result["email"] == "alice@example.com"
     assert result["date_joined"] is not None
     
 def test_create_wallet_user_not_found(
@@ -232,3 +237,29 @@ def test_verify_wallet_ownership_wallet_not_found(
             "TEST001",
             "DOESNOTEXIST",
         )
+        
+def test_authenticate_user(monkeypatch, test_session_factory):
+    monkeypatch.setattr(services, "get_session", test_session_factory)
+
+    password = "testpassword123"
+
+    with test_session_factory() as session:
+        user = User(
+            user_id="TEST002",
+            user_name="Alice",
+            email="alice@example.com",
+            password_hash=password_hasher.hash(password),
+        )
+
+        session.add(user)
+        session.commit()
+
+    result = services.authenticate_user(
+        "alice@example.com",
+        password,
+    )
+
+    assert result["user_id"] == "TEST002"
+    assert result["user_name"] == "Alice"
+    assert result["email"] == "alice@example.com"
+    
