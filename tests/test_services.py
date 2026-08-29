@@ -14,6 +14,7 @@ from app.exceptions import (
     InsufficientBalanceError,
     UserNotFoundError,
     UnauthorizedWalletAccessError,
+    UnauthorizedUserAccessError,
 )
 
 
@@ -263,3 +264,53 @@ def test_authenticate_user(monkeypatch, test_session_factory):
     assert result["user_name"] == "Alice"
     assert result["email"] == "alice@example.com"
     
+def test_authenticate_user_wrong_password(
+    monkeypatch,
+    test_session_factory,
+):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    password = "testpassword123"
+
+    with test_session_factory() as session:
+        user = User(
+            user_id="TEST002",
+            user_name="Alice",
+            email="alice@example.com",
+            password_hash=password_hasher.hash(password),
+        )
+
+        session.add(user)
+        session.commit()
+
+    with pytest.raises(
+        UnauthorizedUserAccessError,
+        match="Invalid email or password",
+    ):
+        services.authenticate_user(
+            "alice@example.com",
+            "WrongPassword123",
+        )
+        
+def test_authenticate_user_not_found(
+    monkeypatch,
+    test_session_factory,
+):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    with pytest.raises(
+        UserNotFoundError,
+        match="User does not exist",
+    ):
+        services.authenticate_user(
+            "doesnotexist@example.com",
+            "SomePassword123",
+        )

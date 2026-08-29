@@ -2,6 +2,8 @@ from fastapi.testclient import TestClient
 import app.services as services
 from app.main import app
 from datetime import date
+from app.models import User
+from app.utils import password_hasher
 
 
 client = TestClient(app)
@@ -162,6 +164,91 @@ def test_create_wallet_user_not_found(
 
     response = client.post(
         "/users/DOESNOTEXIST/wallets",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User does not exist"
+    
+def test_login_success(monkeypatch, test_session_factory):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    password = "testpassword123"
+
+    with test_session_factory() as session:
+        user = User(
+            user_id="TEST002",
+            user_name="Alice",
+            email="alice@example.com",
+            password_hash=password_hasher.hash(password),
+        )
+
+        session.add(user)
+        session.commit()
+
+    response = client.post(
+        "/login",
+        json={
+            "email": "alice@example.com",
+            "password": password,
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["user_id"] == "TEST002"
+    assert data["user_name"] == "Alice"
+    assert data["email"] == "alice@example.com"
+    
+def test_login_wrong_password(monkeypatch, test_session_factory):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    password = "testpassword123"
+
+    with test_session_factory() as session:
+        user = User(
+            user_id="TEST002",
+            user_name="Alice",
+            email="alice@example.com",
+            password_hash=password_hasher.hash(password),
+        )
+
+        session.add(user)
+        session.commit()
+
+    response = client.post(
+        "/login",
+        json={
+            "email": "alice@example.com",
+            "password": "WrongPassword123",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid email or password"
+    
+def test_login_user_not_found(monkeypatch, test_session_factory):
+    monkeypatch.setattr(
+        services,
+        "get_session",
+        test_session_factory,
+    )
+
+    response = client.post(
+        "/login",
+        json={
+            "email": "doesnotexist@example.com",
+            "password": "SomePassword123",
+        },
     )
 
     assert response.status_code == 404
