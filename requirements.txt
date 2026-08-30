@@ -7,3 +7,4 @@ pytest
 httpx2
 alembic
 pwdlib[argon2]
+PyJWT
