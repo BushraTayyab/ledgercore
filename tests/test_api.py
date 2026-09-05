@@ -4,9 +4,13 @@ from app.main import app
 from datetime import date
 from app.models import User
 from app.utils import password_hasher
-
+from app.security import create_access_token
+from app.security import verify_access_token
 
 client = TestClient(app)
+def auth_headers(user_id="TEST001"):
+    token = create_access_token(user_id)
+    return {"Authorization": f"Bearer {token}"}
 
 def test_transaction_endpoint_deposit(monkeypatch, test_session_factory):
     monkeypatch.setattr(services, "get_session", test_session_factory)
@@ -17,6 +21,7 @@ def test_transaction_endpoint_deposit(monkeypatch, test_session_factory):
             "type": "deposit",
             "amount": "100",
         },
+        headers=auth_headers()
     )
 
     assert response.status_code == 200
@@ -36,6 +41,7 @@ def test_transaction_endpoint_withdraw(monkeypatch, test_session_factory):
             "type": "withdraw",
             "amount": "100",
         },
+        headers=auth_headers()
     )
 
     assert response.status_code == 200
@@ -56,6 +62,7 @@ def test_transaction_endpoint_wallet_not_found(monkeypatch, test_session_factory
             "type": "withdraw",
             "amount": "100",
         },
+        headers=auth_headers()
     )
 
     assert response.status_code == 404
@@ -70,6 +77,7 @@ def test_transaction_endpoint_insufficient_balance(monkeypatch, test_session_fac
             "type": "withdraw",
             "amount": "600",
         },
+        headers=auth_headers()
     )
 
     assert response.status_code == 400
@@ -84,6 +92,7 @@ def test_transaction_endpoint_invalid_amount():
             "type": "withdraw",
             "amount": "-100",
         },
+        headers=auth_headers()
     )
 
     assert response.status_code == 422
@@ -97,6 +106,7 @@ def test_transaction_endpoint_invalid_transaction():
             "type": "banana",
             "amount": "100",
         },
+        headers=auth_headers()
     )
 
     assert response.status_code == 422
@@ -200,10 +210,13 @@ def test_login_success(monkeypatch, test_session_factory):
     assert response.status_code == 200
 
     data = response.json()
+    assert "access_token" in data
+    assert isinstance(data["access_token"], str)
+    assert data["token_type"] == "bearer"
+    
+    token = data["access_token"]
 
-    assert data["user_id"] == "TEST002"
-    assert data["user_name"] == "Alice"
-    assert data["email"] == "alice@example.com"
+    assert verify_access_token(token) == "TEST002"
     
 def test_login_wrong_password(monkeypatch, test_session_factory):
     monkeypatch.setattr(

@@ -6,7 +6,13 @@ from app.exceptions import UnauthorizedUserAccessError
 
 import jwt
 
+from fastapi.security import HTTPBearer
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials
+
 load_dotenv()
+
+security = HTTPBearer()
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
@@ -49,3 +55,9 @@ def verify_access_token(token: str):
         raise UnauthorizedUserAccessError(
             "Invalid access token"
         )
+        
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+    return verify_access_token(token)

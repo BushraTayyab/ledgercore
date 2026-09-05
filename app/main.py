@@ -13,6 +13,10 @@ from app.exceptions import (
     UnauthorizedUserAccessError,
     
 )
+from fastapi import Depends
+from app.security import get_current_user
+from app.services import verify_wallet_ownership
+from app.security import get_current_user, create_access_token
 
 from app.services import deposit, withdraw, create_user, create_wallet, authenticate_user
 
@@ -23,8 +27,10 @@ app = FastAPI(title="LedgerCore")
 def create_transaction(
     wallet_id: str,
     request: TransactionCreateRequest,
+    user_id: str = Depends(get_current_user)
 ):
     try:
+        verify_wallet_ownership(user_id, wallet_id)
         if request.type == TransactionType.DEPOSIT:
             return deposit(wallet_id, request.amount)
 
@@ -65,18 +71,16 @@ def create_wallet_endpoint(user_id: str):
 @app.post("/login")
 def login(request: UserLoginRequest):
     try:
-        return authenticate_user(
-            request.email,
-            request.password,
-        )
+        user = authenticate_user(request.email, request.password)
+
+        access_token = create_access_token(user["user_id"])
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+        }
 
     except UserNotFoundError as error:
-        raise HTTPException(
-            status_code=404,
-            detail=str(error),
-        )
+        raise HTTPException(status_code=404, detail=str(error))
     except UnauthorizedUserAccessError as error:
-        raise HTTPException(
-            status_code=401,
-            detail=str(error),
-        )
+        raise HTTPException(status_code=401, detail=str(error))
