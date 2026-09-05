@@ -64,11 +64,13 @@ LedgerCore uses three core entities:
 
 ### Relationships
 
+```
 User
  │
  └───< Wallet
           │
           └───< Transaction
+```
 
 A user can have multiple wallets, and each wallet can have multiple transactions.
 
