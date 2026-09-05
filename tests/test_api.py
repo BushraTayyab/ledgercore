@@ -7,6 +7,7 @@ from app.utils import password_hasher
 from app.security import create_access_token
 from app.security import verify_access_token
 
+
 client = TestClient(app)
 def auth_headers(user_id="TEST001"):
     token = create_access_token(user_id)
@@ -51,6 +52,24 @@ def test_transaction_endpoint_withdraw(monkeypatch, test_session_factory):
     assert data["wallet_id"] == "TESTW001"
     assert data["new_balance"] == 400
     assert data["transaction_id"]
+    
+def test_transaction_endpoint_unauthorized_wallet(
+    monkeypatch,
+    test_session_factory,
+):
+    monkeypatch.setattr(services, "get_session", test_session_factory)
+
+    response = client.post(
+        "/wallets/TESTW001/transactions",
+        json={
+            "type": "deposit",
+            "amount": "100",
+        },
+        headers=auth_headers("TEST002"),
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "User does not own wallet"
     
     
 def test_transaction_endpoint_wallet_not_found(monkeypatch, test_session_factory):

@@ -11,7 +11,7 @@ from app.exceptions import (
     WalletNotFoundError,
     UserNotFoundError,
     UnauthorizedUserAccessError,
-    
+    UnauthorizedWalletAccessError,
 )
 from fastapi import Depends
 from app.security import get_current_user
@@ -47,6 +47,8 @@ def create_transaction(
             status_code=400,
             detail=str(error),
         )
+    except UnauthorizedWalletAccessError as error:
+        raise HTTPException(status_code=403, detail=str(error))
 
 @app.post("/users")
 def create_user_endpoint(request: UserCreateRequest):
